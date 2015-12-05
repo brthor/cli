@@ -7,9 +7,9 @@ using Microsoft.Dnx.Runtime.Common.CommandLine;
 using Microsoft.DotNet.Cli.Utils;
 using Microsoft.DotNet.Tools.Common;
 
-namespace Microsoft.DotNet.Tools.Compiler.Native
+namespace Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation
 {
-    public class ILCompilerInvoker
+    public class ILCompilerInvoker : INativeCompilationComponent
     {
         private readonly string ExecutableName = "corerun" + Constants.ExeSuffix;
         private readonly string ILCompiler = "ilc.exe";
@@ -85,19 +85,11 @@ namespace Microsoft.DotNet.Tools.Compiler.Native
             
             return result.ExitCode;
         }
-        
-        public string DetermineOutputFile(NativeCompileSettings config)
+
+        public bool CheckPreReqs()
         {
-            var intermediateDirectory = config.IntermediateDirectory;
-            
-            var extension = ModeOutputExtensionMap[config.NativeMode];
-            
-            var filename = Path.GetFileNameWithoutExtension(config.InputManagedAssemblyPath);
-        
-            var outFile = Path.Combine(intermediateDirectory, filename + extension);
-            
-            return outFile;
+            var ilcPath = Path.Combine(config.IlcPath, ILCompiler);
+            return File.Exists(ilcPath);
         }
-        
     }
 }
