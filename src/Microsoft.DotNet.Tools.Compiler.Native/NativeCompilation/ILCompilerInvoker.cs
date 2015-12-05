@@ -21,11 +21,14 @@ namespace Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation
         };
 
         private string ArgStr { get; set; }
-        private NativeCompileSettings config;
+        private NativeCompileSettings _config;
+        private string _outputFile;
         
-        public ILCompilerInvoker(NativeCompileSettings config)
+        public ILCompilerInvoker(NativeCompileSettings config, string outputFile)
         {
-            this.config = config;
+            this._config = config;
+            this._outputFile = outputFile;
+
             InitializeArgs(config);
         }
         
@@ -33,13 +36,13 @@ namespace Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation
         {
             var argsList = new List<string>();
 
-            var managedPath = Path.Combine(config.IlcPath, ILCompiler);
-            if (!File.Exists(managedPath))
+            var ilcPath = Path.Combine(config.IlcPath, ILCompiler);
+            if (!File.Exists(ilcPath))
             {
-                throw new FileNotFoundException("Unable to find ILCompiler at " + managedPath);
+                throw new FileNotFoundException("Unable to find ILCompiler at " + ilcPath);
             }
 
-            argsList.Add($"\"{managedPath}\"");
+            argsList.Add($"\"{ilcPath}\"");
             
             // Input File 
             var inputFilePath = config.InputManagedAssemblyPath;
@@ -55,11 +58,10 @@ namespace Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation
                 argsList.Add($"-r \"{reference}\"");
             }
             
-            // Set Output DetermineOutFile
-            var outFile = DetermineOutputFile(config);
-            argsList.Add($"-out \"{outFile}\"");
+            // Set Output
+            argsList.Add($"-out \"{_outputFile}\"");
             
-            // Add Mode Flag TODO
+            // Mode Flat
             if (config.NativeMode == NativeIntermediateMode.cpp)
             {
                 argsList.Add("-cpp");
@@ -76,7 +78,7 @@ namespace Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation
         
         public int Invoke()
         {
-            var executablePath = Path.Combine(config.IlcPath, ExecutableName);
+            var executablePath = Path.Combine(_config.IlcPath, ExecutableName);
             
             var result = Command.Create(executablePath, ArgStr)
                 .ForwardStdErr()
@@ -88,7 +90,7 @@ namespace Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation
 
         public bool CheckPreReqs()
         {
-            var ilcPath = Path.Combine(config.IlcPath, ILCompiler);
+            var ilcPath = Path.Combine(_config.IlcPath, ILCompiler);
             return File.Exists(ilcPath);
         }
     }

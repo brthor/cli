@@ -18,10 +18,7 @@ namespace Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation.Linux
 
             var pc = new LinuxCompiler()
             {
-                Components = new List<INativeCompilationComponent>
-                {
-                    platformComponent
-                }
+                Components = stepComponents
             };
 
             return pc;
@@ -36,7 +33,7 @@ namespace Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation.Linux
                 var step = new LinuxCppCompileStep(config, new string[] { inputFile }, outputFile);
                 stepComponents.Add(step);
             }
-            else if (config.NativeMode == NativeIntermediateMode.cpp)
+            else if (config.NativeMode == NativeIntermediateMode.ryujit)
             {
                 var step = new LinuxRyuJitCompileStep(config, new string[] { inputFile }, outputFile);
                 stepComponents.Add(step);
@@ -45,9 +42,11 @@ namespace Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation.Linux
             {
                 throw new Exception("Unsupported Native Compilation Mode on Linux: " + config.NativeMode.ToString());
             }
+
+            return stepComponents;
         }
 
-        private List<INativeCompilationComponent> Components { get; set; }
+        private IEnumerable<INativeCompilationComponent> Components { get; set; }
 
         public int Invoke()
         {
@@ -57,7 +56,7 @@ namespace Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation.Linux
 
                 if (result != 0)
                 {
-                    Reporter.Error.WriteLine("Platform Compilation Component Failed: " + component.GetType().Name);
+                    Reporter.Error.WriteLine("Linux Compilation Step Failed: " + component.GetType().Name);
                     return result;
                 }
             }
