@@ -21,6 +21,7 @@ namespace ConsoleApplication
         private static string RootPath { get; set; }
         private string TestDirectory { get; set; }
         private string OutputDirectory { get; set; }
+        private string OutputDirectoryWithSpace { get; set; }
         private string Rid { get; set; }
 
         public static void Main()
@@ -37,6 +38,8 @@ namespace ConsoleApplication
 
             TestDirectory = Path.Combine(RootPath, TESTDIR_NAME);
             OutputDirectory = Path.Combine(RootPath, OUTPUTDIR_NAME);
+
+            OutputDirectoryWithSpace = Path.Combine(RootPath, OUTPUTDIR_NAME + " " + OUTPUTDIR_NAME);
 
             Rid = RuntimeIdentifier.Current;
         }
@@ -106,6 +109,15 @@ namespace ConsoleApplication
 
             TestRunCommand("dotnet", $"publish --framework dnxcore50 --runtime {Rid} -o {OutputDirectory}");
             TestOutputExecutable(OutputDirectory);    
+        }
+
+        [Fact]
+        public void TestDotnetPublishWithSpaceInOutput()
+        {
+            TestSetup();
+            Console.WriteLine(OutputDirectoryWithSpace);
+            TestRunCommand("dotnet", $"publish --framework dnxcore50 --runtime {Rid} -o \"{OutputDirectoryWithSpace}\"");
+            TestOutputExecutable(OutputDirectoryWithSpace);    
         }
 
         private void TestSetup()

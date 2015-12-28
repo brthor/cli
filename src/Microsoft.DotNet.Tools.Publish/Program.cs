@@ -13,6 +13,10 @@ namespace Microsoft.DotNet.Tools.Publish
     {
         public static int Main(string[] args)
         {
+            foreach(var arg in args)
+            {
+                Console.WriteLine(arg);
+            }
             DebugHelper.HandleDebugSwitch(ref args);
 
             var app = new CommandLineApplication();

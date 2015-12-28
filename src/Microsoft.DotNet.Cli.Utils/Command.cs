@@ -45,7 +45,30 @@ namespace Microsoft.DotNet.Cli.Utils
 
         public static Command Create(string executable, IEnumerable<string> args, NuGetFramework framework = null)
         {
-            return Create(executable, string.Join(" ", args), framework);
+            var quotedArgs = QuoteArgArray(args);
+            return Create(executable, string.Join(" ", quotedArgs), framework);
+        }
+
+        private static object QuoteArgArray(IEnumerable<string> args)
+        {
+            List<string> quotedArgs = new List<string>();
+
+            foreach (var arg in args)
+            {
+                // Only add quotes if there are none
+                if (arg[0] != '"' && arg[arg.Length-1] != '"')
+                {
+                    var quotedArg = string.Format("\"{0}\"", arg.Trim('"'));
+                    Console.WriteLine(quotedArg);
+                    quotedArgs.Add(quotedArg);
+                }
+                else
+                {
+                    quotedArgs.Add(arg);
+                }
+            }
+
+            return quotedArgs;
         }
 
         public static Command Create(string executable, string args, NuGetFramework framework = null)
