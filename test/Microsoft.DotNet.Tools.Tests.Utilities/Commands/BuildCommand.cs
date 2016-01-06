@@ -28,7 +28,7 @@ namespace Microsoft.DotNet.Tools.Test.Utilities
         {
             get
             {
-                return _outputDirectory == string.Empty ?
+                return string.IsNullOrEmpty(_outputDirectory) ?
                                            "" :
                                            $"-o {_outputDirectory}";
             }
@@ -38,7 +38,7 @@ namespace Microsoft.DotNet.Tools.Test.Utilities
         {
             get
             {
-                return _tempOutputDirectory == string.Empty ?
+                return string.IsNullOrEmpty(_tempOutputDirectory) ?
                                            "" :
                                            $"-t {_tempOutputDirectory}";
             }
@@ -48,7 +48,7 @@ namespace Microsoft.DotNet.Tools.Test.Utilities
         {
             get
             {
-                return _configuration == string.Empty ?
+                return string.IsNullOrEmpty(_configuration) ?
                                            "" :
                                            $"-c {_configuration}";
             }
@@ -78,7 +78,7 @@ namespace Microsoft.DotNet.Tools.Test.Utilities
         {
             get
             {
-                return _architecture == string.Empty ?
+                return string.IsNullOrEmpty(_architecture) ?
                                            "" :
                                            $"--arch {_architecture}";
             }
@@ -88,7 +88,7 @@ namespace Microsoft.DotNet.Tools.Test.Utilities
         {
             get
             {
-                return _ilcArgs == string.Empty ?
+                return string.IsNullOrEmpty(_ilcArgs) ?
                                            "" :
                                            $"--ilcargs {_ilcArgs}";
             }
@@ -98,7 +98,7 @@ namespace Microsoft.DotNet.Tools.Test.Utilities
         {
             get
             {
-                return _ilcPath == string.Empty ?
+                return string.IsNullOrEmpty(_ilcPath) ?
                                            "" :
                                            $"--ilcpath {_ilcPath}";
             }
@@ -108,7 +108,7 @@ namespace Microsoft.DotNet.Tools.Test.Utilities
         {
             get
             {
-                return _appDepSDKPath == string.Empty ?
+                return string.IsNullOrEmpty(_appDepSDKPath) ?
                                            "" :
                                            $"--appdepsdkpath {_appDepSDKPath}";
             }
@@ -128,7 +128,7 @@ namespace Microsoft.DotNet.Tools.Test.Utilities
         {
             get
             {
-                return _cppCompilerFlags == string.Empty ?
+                return string.IsNullOrEmpty(_cppCompilerFlags) ?
                                            "" :
                                            $"--cppcompilerflags {_cppCompilerFlags}";
             }

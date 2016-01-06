@@ -11,8 +11,8 @@ namespace Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation
 {
     public class ILCompilerInvoker : INativeCompilationComponent
     {
-        private readonly string ExecutableName = "corerun" + Constants.ExeSuffix;
-        private readonly string ILCompiler = "ilc.exe";
+        private readonly string HostExecutable = "corerun" + Constants.ExeSuffix;
+        private readonly string ILCompilerExecutable = "ilc.exe";
 
         private static readonly Dictionary<NativeIntermediateMode, string> s_modeExtensionMap = new Dictionary<NativeIntermediateMode, string>
         {
@@ -27,12 +27,17 @@ namespace Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation
 
         public static ILCompilerInvoker Create(NativeCompileSettings config)
         {
+            return new ILCompilerInvoker(config, DetermineOutputFile(config));
+        }
+
+        public static string DetermineOutputFile(NativeCompileSettings config)
+        {
             var inputAssemblyName = Path.GetFileNameWithoutExtension(config.InputManagedAssemblyPath);
             var outputExtension = s_modeExtensionMap[config.NativeMode];
 
             var outputFilePath = Path.Combine(config.IntermediateDirectory, inputAssemblyName, outputExtension);
 
-            return new ILCompilerInvoker(config, outputFilePath);
+            return outputFilePath;
         }
 
         public ILCompilerInvoker(NativeCompileSettings config, string outputFile)
@@ -45,7 +50,7 @@ namespace Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation
         
         private void Initialize(NativeCompileSettings config)
         {
-            var ilcPath = Path.Combine(config.IlcPath, ILCompiler);
+            var ilcExecutablePath = Path.Combine(config.IlcPath, ILCompilerExecutable);
             var coreLibPath = Path.Combine(config.IlcSdkPath, "sdk", "System.Private.CoreLib.dll");
 
             List<string> references = new List<string>();
@@ -60,12 +65,12 @@ namespace Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation
                 references
                 );
 
-            _argStr = $"{ilcPath} {_ilCompiler.BuildArgumentString()}";
+            _argStr = $"\"{ilcExecutablePath}\" {_ilCompiler.BuildArgumentString()}";
         }
         
         public int Invoke()
         {
-            var executablePath = Path.Combine(_config.IlcPath, ExecutableName);
+            var executablePath = Path.Combine(_config.IlcPath, HostExecutable);
             
             var result = Command.Create(executablePath, _argStr)
                 .ForwardStdErr()
@@ -77,11 +82,11 @@ namespace Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation
 
         public bool CheckPreReqs()
         {
-            var ilcPath = Path.Combine(_config.IlcPath, ILCompiler);
+            var ilcExecutablePath = Path.Combine(_config.IlcPath, ILCompilerExecutable);
 
-            if (!File.Exists(ilcPath))
+            if (!File.Exists(ilcExecutablePath))
             {
-                Reporter.Error.WriteLine("ILCompiler Not found at: " + ilcPath);
+                Reporter.Error.WriteLine("ILCompiler Not found at: " + ilcExecutablePath);
                 return false;
             }
 

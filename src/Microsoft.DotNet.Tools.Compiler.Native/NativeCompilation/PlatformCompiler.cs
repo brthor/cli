@@ -13,9 +13,9 @@ namespace Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation
 {
     public class PlatformCompiler : INativeCompilationComponent
     {
-        public static PlatformCompiler Create(NativeCompileSettings config)
+        public static PlatformCompiler Create(NativeCompileSettings config, string ilCompilerOutputFile)
         {
-            var platformComponent = SelectPlatformCompilerForOS(config);
+            var platformComponent = SelectPlatformCompilerForOS(config, ilCompilerOutputFile);
             
             var pc = new PlatformCompiler() 
             {
@@ -28,19 +28,19 @@ namespace Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation
             return pc;
         }
 
-        private static INativeCompilationComponent SelectPlatformCompilerForOS(NativeCompileSettings config)
+        private static INativeCompilationComponent SelectPlatformCompilerForOS(NativeCompileSettings config, string ilCompilerOutputFile)
         {
             if (config.OS == OSMode.Windows)
             {
-                return WindowsCompiler.Create(config);
+                return WindowsCompiler.Create(config, ilCompilerOutputFile);
             }
             else if (config.OS == OSMode.Linux)
             {
-                return LinuxCompiler.Create(config);
+                return LinuxCompiler.Create(config, ilCompilerOutputFile);
             }
             else if (config.OS == OSMode.Mac)
             {
-                return MacCompiler.Create(config);
+                return MacCompiler.Create(config, ilCompilerOutputFile);
             }
             else
             {

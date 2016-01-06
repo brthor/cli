@@ -12,16 +12,23 @@ namespace Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation.Linux
 {
     public class LinuxCompiler : INativeCompilationComponent
     {
-        public static LinuxCompiler Create(NativeCompileSettings config, string inputFile, string outputFile)
+        public static LinuxCompiler Create(NativeCompileSettings config, string inputFile)
         {
-            var stepComponents = SelectStepComponentsForMode(config, inputFile, outputFile);
+            var stepComponents = SelectStepComponentsForMode(config, inputFile, DetermineOutputFile(config));
 
-            var pc = new LinuxCompiler()
+            var platformCompiler = new LinuxCompiler()
             {
                 Components = stepComponents
             };
 
-            return pc;
+            return platformCompiler;
+        }
+
+        public static string DetermineOutputFile(NativeCompileSettings config)
+        {
+            var inputAssemblyName = Path.GetFileNameWithoutExtension(config.InputManagedAssemblyPath);
+            var outputFilePath = Path.Combine(config.OutputDirectory, inputAssemblyName);
+            return outputFilePath;
         }
 
         private static IEnumerable<INativeCompilationComponent> SelectStepComponentsForMode(NativeCompileSettings config, string inputFile, string outputFile)

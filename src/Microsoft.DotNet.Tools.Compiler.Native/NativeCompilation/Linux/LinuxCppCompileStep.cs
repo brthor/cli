@@ -14,7 +14,6 @@ namespace Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation.Linux
 {
     public class LinuxCppCompileStep : INativeCompilationComponent
     {
-        // TODO: debug/release support
         private readonly string[] clangFlags = new string[]
         {
             "-lm", "-ldl", "-g", "-lstdc++", "-lrt", "-Wno-invalid-offsetof", "-pthread"

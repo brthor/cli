@@ -43,9 +43,15 @@ namespace Microsoft.DotNet.Tools.Compiler.Native
 
                 var nativeCompiler = NativeCompiler.Create(config);
 
+                if (!nativeCompiler.CheckPreReqs())
+                {
+                    Console.WriteLine("Prerequisite Check Failed. See above messages.");
+                    return 1;
+                }
+
                 var result = nativeCompiler.Invoke();
 
-                return result ? 0 : 1;
+                return result;
             }
             catch (Exception ex)
             {

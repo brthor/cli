@@ -17,7 +17,7 @@ namespace Microsoft.DotNet.Tools.Test.Utilities
         {
             get
             {
-                return _projectPath == string.Empty ?
+                return string.IsNullOrEmpty(_projectPath) ?
                                        "" :
                                        $"-p {_projectPath}";
             }
@@ -27,7 +27,7 @@ namespace Microsoft.DotNet.Tools.Test.Utilities
         {
             get
             {
-                return _framework == string.Empty ?
+                return string.IsNullOrEmpty(_framework) ?
                                        "" :
                                        $"-f {_framework}";
             }
@@ -37,7 +37,7 @@ namespace Microsoft.DotNet.Tools.Test.Utilities
         {
             get
             {
-                return _configuration == string.Empty ?
+                return string.IsNullOrEmpty(_configuration) ?
                                        "" :
                                        $"-c {_configuration}";
             }
