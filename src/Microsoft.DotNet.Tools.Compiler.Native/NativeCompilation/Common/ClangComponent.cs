@@ -1,8 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
 
 using Microsoft.Dnx.Runtime.Common.CommandLine;
 using Microsoft.DotNet.Cli.Utils;
@@ -54,13 +51,23 @@ namespace Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation.Common
 
         public bool CheckPreReqs()
         {
-            var result = Command.Create(ComponentExecutable, "--help")
+            try
+            {
+                var result = Command.Create(ComponentExecutable, "--help")
                 .CaptureStdErr()
                 .CaptureStdOut()
                 .Execute()
                 .ExitCode;
 
-            return result == 0;
+                return result == 0;
+            } catch (Exception e)
+            {
+#if DEBUG
+                Console.WriteLine(e);
+#endif
+                return false;
+            }
+            
         }
 
         private string ConstructArgStr()

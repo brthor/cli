@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using Microsoft.DotNet.Cli.Utils;
+using Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation;
 
 namespace Microsoft.DotNet.Tools.Compiler.Native
 {
@@ -42,7 +43,7 @@ namespace Microsoft.DotNet.Tools.Compiler.Native
 
                 var nativeCompiler = NativeCompiler.Create(config);
 
-                var result = nativeCompiler.CompileToNative(config);
+                var result = nativeCompiler.Invoke();
 
                 return result ? 0 : 1;
             }
