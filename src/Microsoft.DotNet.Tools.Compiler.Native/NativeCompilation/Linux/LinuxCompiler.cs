@@ -10,13 +10,13 @@ using Microsoft.DotNet.Tools.Common;
 
 namespace Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation.Linux
 {
-    public class LinuxCompiler : INativeCompilationComponent
+    public class MacCompiler : INativeCompilationComponent
     {
-        public static LinuxCompiler Create(NativeCompileSettings config, string inputFile)
+        public static MacCompiler Create(NativeCompileSettings config, string inputFile)
         {
             var stepComponents = SelectStepComponentsForMode(config, inputFile, DetermineOutputFile(config));
 
-            var platformCompiler = new LinuxCompiler()
+            var platformCompiler = new MacCompiler()
             {
                 Components = stepComponents
             };

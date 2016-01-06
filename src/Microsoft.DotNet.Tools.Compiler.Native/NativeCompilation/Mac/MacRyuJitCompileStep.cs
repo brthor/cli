@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -10,21 +10,20 @@ using Microsoft.DotNet.Tools.Common;
 
 namespace Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation.Mac
 {
-    public class MacCppCompileStep : INativeCompilationComponent
+    public class MacRyuJitCompileStep : INativeCompilationComponent
     {
         private readonly string CompilerName = "clang";
-        private readonly string InputExtension = ".cpp";
+        private readonly string InputExtension = ".obj";
+
+        private readonly string CompilerOutputExtension = "";
 
         // TODO: debug/release support
-        private readonly string cflags = "-g -lstdc++ -Wno-invalid-offsetof -pthread";
-
-        // Link to iconv APIs
-        private readonly string libFlags = "-liconv";
+        private readonly string cflags = "-g -lstdc++ -Wno-invalid-offsetof -pthread -ldl -lm -liconv";
 
         private readonly string[] IlcSdkLibs = new string[]
         {
-            "libbootstrappercpp.a",
-            "libPortableRuntime.a",
+            "libbootstrapper.a",
+            "libRuntime.a",
             "libSystem.Private.CoreLib.Native.a"
         };
 
@@ -37,7 +36,7 @@ namespace Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation.Mac
         private string CompilerArgStr { get; set; }
         private NativeCompileSettings config;
 
-        public MacCppCompileStep(NativeCompileSettings config)
+        public MacRyuJitCompileStep(NativeCompileSettings config)
         {
             this.config = config;
             InitializeArgs(config);
@@ -66,42 +65,31 @@ namespace Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation.Mac
 
             // Flags
             argsList.Add(cflags);
-
-            var ilcSdkIncPath = Path.Combine(config.IlcSdkPath, "inc");
-            argsList.Add("-I");
-            argsList.Add($"\"{ilcSdkIncPath}\"");
-
-            // Input File
-            var inCppFile = DetermineInFile(config);
-            argsList.Add(inCppFile);
-
-            // Lib flags
-            argsList.Add(libFlags);
-
+            
             // Pass the optional native compiler flags if specified
             if (!string.IsNullOrWhiteSpace(config.CppCompilerFlags))
             {
                 argsList.Add(config.CppCompilerFlags);
             }
+            
+            // Input File
+            var inLibFile = DetermineInFile(config);
+            argsList.Add("-Xlinker "+inLibFile);
 
             // ILC SDK Libs
             var IlcSdkLibPath = Path.Combine(config.IlcSdkPath, "sdk");
             foreach (var lib in IlcSdkLibs)
             {
                 var libPath = Path.Combine(IlcSdkLibPath, lib);
-
-                // Forward the library to linked to the linker
-                argsList.Add("-Xlinker");
-                argsList.Add(libPath);
+                argsList.Add("-Xlinker "+libPath);
             }
 
             // AppDep Libs
-            var baseAppDeplibPath = Path.Combine(config.AppDepSDKPath, "CPPSdk/osx.10.10/x64");
+            var baseAppDepLibPath = Path.Combine(config.AppDepSDKPath, "CPPSdk/osx.10.10", config.Architecture.ToString());
             foreach (var lib in appdeplibs)
             {
-                var appDeplibPath = Path.Combine(baseAppDeplibPath, lib);
-                argsList.Add("-Xlinker");
-                argsList.Add(appDeplibPath);
+                var appDepLibPath = Path.Combine(baseAppDepLibPath, lib);
+                argsList.Add("-Xlinker "+appDepLibPath);
             }
 
             // Output
@@ -138,7 +126,7 @@ namespace Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation.Mac
 
             var filename = Path.GetFileNameWithoutExtension(config.InputManagedAssemblyPath);
 
-            var outfile = Path.Combine(intermediateDirectory, filename);
+            var outfile = Path.Combine(intermediateDirectory, filename + CompilerOutputExtension);
 
             return outfile;
         }

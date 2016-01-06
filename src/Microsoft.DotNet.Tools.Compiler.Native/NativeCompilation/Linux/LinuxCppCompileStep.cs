@@ -7,62 +7,46 @@ using System.Linq;
 using Microsoft.Dnx.Runtime.Common.CommandLine;
 using Microsoft.DotNet.Cli.Utils;
 using Microsoft.DotNet.Tools.Common;
-using Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation;
-using Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation.Common;
 
 namespace Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation.Linux
 {
     public class LinuxCppCompileStep : INativeCompilationComponent
     {
-        private readonly string[] clangFlags = new string[]
-        {
-            "-lm", "-ldl", "-g", "-lstdc++", "-lrt", "-Wno-invalid-offsetof", "-pthread"
-        };
+        private readonly string CompilerName = "clang-3.5";
+        private readonly string InputExtension = ".cpp";
 
-        private readonly string[] ilcLibs = new string[]
+        // TODO: debug/release support
+        private readonly string cLibsFlags = "-lm -ldl";
+        private readonly string cflags = "-g -lstdc++ -lrt -Wno-invalid-offsetof -pthread";
+
+        private readonly string[] IlcSdkLibs = new string[]
         {
             "libbootstrappercpp.a",
             "libPortableRuntime.a",
             "libSystem.Private.CoreLib.Native.a"
         };
 
-        private readonly string[] sdkLibs = new string[]
+        private readonly string[] appdeplibs = new string[]
         {
-            "CPPSdk/ubuntu.14.04/x64/libSystem.Native.a"
+            "libSystem.Native.a"
         };
 
-        private readonly string[] sdkIncludePaths = new string[]
+
+        private string CompilerArgStr { get; set; }
+        private NativeCompileSettings config;
+
+        public LinuxCppCompileStep(NativeCompileSettings config)
         {
-            "CPPSdk/ubuntu.14.04",
-            "CPPSdk"
-        };
-
-        private readonly string[] sdkInputFiles = new string[]
-        {
-            "CPPSdk/ubuntu.14.04/lxstubs.cpp"
-        };
-
-        
-        private NativeCompileSettings _config;
-        private IEnumerable<string> _inputCppFiles;
-        private INativeCompilationComponent _compilerComponent;
-        private string _outputFilePath;
-
-        public LinuxCppCompileStep(NativeCompileSettings config, IEnumerable<string> inputCppFiles, string outputFilePath)
-        {
-            this._config = config;
-            this._inputCppFiles = inputCppFiles;
-            this._outputFilePath = outputFilePath;
-
-            this._compilerComponent = ConstructCompilerComponent();
+            this.config = config;
+            InitializeArgs(config);
         }
 
         public int Invoke()
         {
-            var result = _compilerComponent.Invoke();
+            var result = InvokeCompiler();
             if (result != 0)
             {
-                Reporter.Error.WriteLine("Linux Cpp Compilation Step Failed");
+                Reporter.Error.WriteLine("Compilation of intermediate files failed.");
             }
 
             return result;
@@ -70,50 +54,86 @@ namespace Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation.Linux
 
         public bool CheckPreReqs()
         {
-            return _compilerComponent.CheckPreReqs();
+            // TODO check for clang
+            return true;
         }
 
-        private INativeCompilationComponent ConstructCompilerComponent()
+        private void InitializeArgs(NativeCompileSettings config)
         {
-            var inputFiles = ConstructInputFiles();
-            var includePaths = ConstructIncludePaths();
+            var argsList = new List<string>();
 
-            var compiler = new ClangComponent(inputFiles,
-                                              includePaths,
-                                              clangFlags,
-                                              _outputFilePath);
+            // Flags
+            argsList.Add(cflags);
 
-            return compiler;
+            var ilcSdkIncPath = Path.Combine(config.IlcSdkPath, "inc");
+            argsList.Add("-I");
+            argsList.Add($"\"{ilcSdkIncPath}\"");
+
+            // Input File
+            var inCppFile = DetermineInFile(config);
+            argsList.Add(inCppFile);
+
+            // Pass the optional native compiler flags if specified
+            if (!string.IsNullOrWhiteSpace(config.CppCompilerFlags))
+            {
+                argsList.Add(config.CppCompilerFlags);
+            }
+
+            // ILC SDK Libs
+            var IlcSdkLibPath = Path.Combine(config.IlcSdkPath, "sdk");
+            foreach (var lib in IlcSdkLibs)
+            {
+                var libPath = Path.Combine(IlcSdkLibPath, lib);
+                argsList.Add(libPath);
+            }
+
+            // AppDep Libs
+            var baseAppDeplibPath = Path.Combine(config.AppDepSDKPath, "CPPSdk/ubuntu.14.04/x64");
+            foreach (var lib in appdeplibs)
+            {
+                var appDeplibPath = Path.Combine(baseAppDeplibPath, lib);
+                argsList.Add(appDeplibPath);
+            }
+
+            argsList.Add(cLibsFlags);
+
+            // Output
+            var libOut = DetermineOutputFile(config);
+            argsList.Add($"-o \"{libOut}\"");
+
+            this.CompilerArgStr = string.Join(" ", argsList);
         }
 
-        private IEnumerable<string> ConstructInputFiles()
+        private int InvokeCompiler()
         {
-            var inputFiles = new List<string>();
-            inputFiles.AddRange(_inputCppFiles);
+            var result = Command.Create(CompilerName, CompilerArgStr)
+                .ForwardStdErr()
+                .ForwardStdOut()
+                .Execute();
 
-            foreach (var lib in ilcLibs)
-            {
-                inputFiles.Add(Path.Combine(_config.IlcPath, lib));
-            }
-            
-            foreach (var lib in sdkLibs)
-            {
-                inputFiles.Add(Path.Combine(_config.AppDepSDKPath, lib));
-            }
-
-            return inputFiles;
+            return result.ExitCode;
         }
 
-        private IEnumerable<string> ConstructIncludePaths()
+        private string DetermineInFile(NativeCompileSettings config)
         {
-            var includePaths = new List<string>();
+            var intermediateDirectory = config.IntermediateDirectory;
 
-            foreach (var include in sdkIncludePaths)
-            {
-                includePaths.Add(Path.Combine(_config.AppDepSDKPath, include));
-            }
+            var filename = Path.GetFileNameWithoutExtension(config.InputManagedAssemblyPath);
 
-            return includePaths;
+            var infile = Path.Combine(intermediateDirectory, filename + InputExtension);
+
+            return infile;
+        }
+
+        public string DetermineOutputFile(NativeCompileSettings config)
+        {
+            var intermediateDirectory = config.OutputDirectory;
+
+            var filename = Path.GetFileNameWithoutExtension(config.InputManagedAssemblyPath);
+
+            var outfile = Path.Combine(intermediateDirectory, filename);
+
+            return outfile;
         }
     }
 }

@@ -8,9 +8,9 @@ using Microsoft.Dnx.Runtime.Common.CommandLine;
 using Microsoft.DotNet.Cli.Utils;
 using Microsoft.DotNet.Tools.Common;
 
-namespace Microsoft.DotNet.Tools.Compiler.Native
+namespace Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation.Windows
 {
-    public class WindowsLinkStep : IPlatformNativeStep
+    public class WindowsLinkStep : INativeCompilationComponent
     {
         private readonly string LinkerName = "link.exe";
         private readonly string LinkerOutputExtension = ".exe";
@@ -24,7 +24,7 @@ namespace Microsoft.DotNet.Tools.Compiler.Native
             { BuildConfiguration.release, "/NOLOGO /ERRORREPORT:PROMPT /INCREMENTAL:NO /OPT:REF /OPT:ICF /LTCG:incremental /MANIFEST /MANIFESTUAC:\"level='asInvoker' uiAccess='false'\" /manifest:embed /Debug /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT" }
         };
 
-        private static readonly Dictionary<NativeIntermediateMode, string[]> ModeLibMap = new Dictionary<NativeIntermediateMode, string[]>
+        private static readonly Dictionary<NativeIntermediateMode, string[]> IlcSdkLibMap = new Dictionary<NativeIntermediateMode, string[]>
         {
             { NativeIntermediateMode.cpp, new string[] { "PortableRuntime.lib", "bootstrappercpp.lib" } },
             { NativeIntermediateMode.ryujit, new string[] { "Runtime.lib", "bootstrapper.lib" } }
@@ -46,21 +46,23 @@ namespace Microsoft.DotNet.Tools.Compiler.Native
             "odbccp32.lib"
         };
 
+        // We will always link against msvcrt.lib since the runtime libraries are also built against msvcrt.lib as we are not interested in assertions
+        // from CRT code.
         private static readonly Dictionary<BuildConfiguration, string[]> ConfigurationLinkLibMap = new Dictionary<BuildConfiguration, string[]>()
         {
-            { BuildConfiguration.debug , new string[] { "msvcrtd.lib" } },
+            { BuildConfiguration.debug , new string[] { "msvcrt.lib" } },
             { BuildConfiguration.release , new string[] { "msvcrt.lib" } }
         };
-        
+
         private string ArgStr { get; set; }
         private NativeCompileSettings config;
-        
+
         public WindowsLinkStep(NativeCompileSettings config)
         {
             this.config = config;
             InitializeArgs(config);
         }
-        
+
         public int Invoke()
         {
             var result = WindowsCommon.SetVCVars();
@@ -69,7 +71,7 @@ namespace Microsoft.DotNet.Tools.Compiler.Native
                 Reporter.Error.WriteLine("vcvarsall.bat invocation failed.");
                 return result;
             }
-            
+
             result = InvokeLinker();
             if (result != 0)
             {
@@ -77,32 +79,33 @@ namespace Microsoft.DotNet.Tools.Compiler.Native
             }
             return result;
         }
-        
+
         public bool CheckPreReqs()
         {
             var vcInstallDir = Environment.GetEnvironmentVariable("VS140COMNTOOLS");
             return !string.IsNullOrEmpty(vcInstallDir);
         }
-        
+
         private void InitializeArgs(NativeCompileSettings config)
         {
             var argsList = new List<string>();
-            
+
             // Configuration Based Linker Options 
             argsList.Add(ConfigurationLinkerOptionsMap[config.BuildType]);
-            
+
             //Output
             var outFile = DetermineOutputFile(config);
             argsList.Add($"/out:\"{outFile}\"");
-            
+
             // Constant Libs
             argsList.Add(string.Join(" ", ConstantLinkLibs));
 
-            // SDK Libs
-            var SDKLibs = ModeLibMap[config.NativeMode];
+            // ILC SDK Libs
+            var SDKLibs = IlcSdkLibMap[config.NativeMode];
+            var IlcSdkLibPath = Path.Combine(config.IlcSdkPath, "sdk");
             foreach (var lib in SDKLibs)
             {
-                var sdkLibPath = Path.Combine(config.IlcPath, lib);
+                var sdkLibPath = Path.Combine(IlcSdkLibPath, lib);
                 argsList.Add($"\"{sdkLibPath}\"");
             }
 
@@ -114,40 +117,41 @@ namespace Microsoft.DotNet.Tools.Compiler.Native
             }
 
             // Link Libs
-            foreach(var path in config.LinkLibPaths){
+            foreach (var path in config.LinkLibPaths)
+            {
                 argsList.Add($"\"{path}\"");
             }
-            
+
             //arch
             argsList.Add($"/MACHINE:{config.Architecture}");
 
             //Input Obj file
             var inputFile = DetermineInputFile(config);
             argsList.Add($"\"{inputFile}\"");
-            
+
             this.ArgStr = string.Join(" ", argsList);
         }
-        
+
         private int InvokeLinker()
         {
             var vcInstallDir = Environment.GetEnvironmentVariable("VS140COMNTOOLS");
             var linkerPath = Path.Combine(vcInstallDir, VSBin, LinkerName);
-            
+
             var result = Command.Create(linkerPath, ArgStr)
                 .ForwardStdErr()
                 .ForwardStdOut()
                 .Execute();
             return result.ExitCode;
         }
-        
+
         public string DetermineOutputFile(NativeCompileSettings config)
         {
             var outputDirectory = config.OutputDirectory;
-            
+
             var filename = Path.GetFileNameWithoutExtension(config.InputManagedAssemblyPath);
-        
+
             var outFile = Path.Combine(outputDirectory, filename + LinkerOutputExtension);
-            
+
             return outFile;
         }
 
@@ -161,6 +165,6 @@ namespace Microsoft.DotNet.Tools.Compiler.Native
 
             return infile;
         }
-        
+
     }
 }

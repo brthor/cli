@@ -32,11 +32,11 @@ namespace Microsoft.DotNet.Tools.Compiler.Native.NativeCompilation
         {
             if (config.OS == OSMode.Windows)
             {
-                return WindowsCompiler.Create(config, ilCompilerOutputFile);
+                return MacCompiler.Create(config, ilCompilerOutputFile);
             }
             else if (config.OS == OSMode.Linux)
             {
-                return LinuxCompiler.Create(config, ilCompilerOutputFile);
+                return MacCompiler.Create(config, ilCompilerOutputFile);
             }
             else if (config.OS == OSMode.Mac)
             {
