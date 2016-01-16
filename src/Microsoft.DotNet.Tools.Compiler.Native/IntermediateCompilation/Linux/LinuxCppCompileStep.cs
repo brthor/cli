@@ -11,8 +11,8 @@ namespace Microsoft.DotNet.Tools.Compiler.Native
         private const string InputExtension = ".cpp";
 
         // TODO: debug/release support
-        private const string CLibsFlags = "-lm -ldl";
-        private const string Cflags = "-g -lstdc++ -lrt -Wno-invalid-offsetof -pthread";
+        private readonly string [] _cLibsFlags = { "-lm", "-ldl"};
+        private readonly string [] _cflags = { "-g", "-lstdc++", "-lrt", "-Wno-invalid-offsetof", "-pthread"};
 
         public IEnumerable<string> CompilerArgs { get; set; }
 
@@ -55,7 +55,7 @@ namespace Microsoft.DotNet.Tools.Compiler.Native
             var argsList = new List<string>();
             
             // Flags
-            argsList.Add(Cflags);
+            argsList.AddRange(_cflags);
 
             var ilcSdkIncPath = Path.Combine(config.IlcSdkPath, "inc");
             argsList.Add("-I");
@@ -79,7 +79,7 @@ namespace Microsoft.DotNet.Tools.Compiler.Native
             var baseAppDeplibPath = Path.Combine(config.AppDepSDKPath, "CPPSdk/ubuntu.14.04/x64");
             argsList.AddRange(_appdeplibs.Select(lib => Path.Combine(baseAppDeplibPath, lib)));
 
-            argsList.Add(CLibsFlags);
+            argsList.AddRange(_cLibsFlags);
             
             // Output
             var libOut = DetermineOutputFile(config);
