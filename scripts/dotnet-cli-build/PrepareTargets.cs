@@ -225,15 +225,14 @@ namespace Microsoft.DotNet.Cli.Build
             {
                 "unzip",
                 "curl",
-                "libicu-dev",
                 "libunwind8",
                 "gettext",
-                "libssl-dev",
-                "libcurl4-openssl-dev",
                 "zlib1g",
-                "liblttng-ust-dev",
-                "lldb-3.6-dev",
-                "lldb-3.6"
+                "liblttng-ust0",
+                "lldb-3.6",
+                "libssl-dev",
+                "libicu-dev",
+                "libcurl4-openssl-dev"
             };
 
             foreach (var package in ubuntuCoreclrDependencies)
