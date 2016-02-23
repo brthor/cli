@@ -193,10 +193,12 @@ namespace Microsoft.DotNet.Cli.Build
             };
 
             var messageBuilder = new StringBuilder();
+            var aptDependencyUtility = new AptDependencyUtility();
+
 
             foreach (var package in debianPackageBuildDependencies)
             {
-                if (!AptPackageIsInstalled(package))
+                if (!aptDependencyUtility.AptPackageIsInstalled(package))
                 {
                     messageBuilder.Append($"Error: Debian package build dependency {package} missing.");
                     messageBuilder.Append(Environment.NewLine);
@@ -220,24 +222,15 @@ namespace Microsoft.DotNet.Cli.Build
         public static BuildTargetResult CheckUbuntuCoreclrDependencies(BuildTargetContext c)
         {
             var errorMessageBuilder = new StringBuilder();
+            var stage0 = DotNetCli.Stage0.BinPath;
 
-            var ubuntuCoreclrDependencies = new string[]
-            {
-                "unzip",
-                "curl",
-                "libunwind8",
-                "gettext",
-                "zlib1g",
-                "liblttng-ust0",
-                "lldb-3.6",
-                "libssl-dev",
-                "libicu-dev",
-                "libcurl4-openssl-dev"
-            };
+            var aptDependencyUtility = new AptDependencyUtility();
+
+            var ubuntuCoreclrDependencies = aptDependencyUtility.DeterminePackageDependenciesOfDirectory(stage0);
 
             foreach (var package in ubuntuCoreclrDependencies)
             {
-                if (!AptPackageIsInstalled(package))
+                if (!aptDependencyUtility.AptPackageIsInstalled(package))
                 {
                     errorMessageBuilder.Append($"Error: Coreclr package dependency {package} missing.");
                     errorMessageBuilder.Append(Environment.NewLine);
@@ -329,17 +322,6 @@ cmake is required to build the native host 'corehost'";
         private static bool AptPackageIsInstalled(string packageName)
         {
             var result = Command.Create("dpkg", "-s", packageName)
-                .CaptureStdOut()
-                .CaptureStdErr()
-                .QuietBuildReporter()
-                .Execute();
-
-            return result.ExitCode == 0;
-        }
-
-        private static bool YumPackageIsInstalled(string packageName)
-        {
-            var result = Command.Create("yum", "list", "installed", packageName)
                 .CaptureStdOut()
                 .CaptureStdErr()
                 .QuietBuildReporter()
