@@ -38,7 +38,7 @@ ARG USER_ID=0
 RUN useradd -m code_executor -u ${USER_ID} -g sudo
 RUN echo 'code_executor ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
-# With the User Change, we need to change permssions on these directories
+# With the User Change, we need to change permissions on these directories
 RUN chmod -R a+rwx /usr/local
 RUN chmod -R a+rwx /home
 RUN chmod -R 755 /usr/lib/sudo
