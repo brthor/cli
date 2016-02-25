@@ -11,8 +11,11 @@
         //command loaded from the same directory as a project.json file
         ProjectLocal,
 
-        //command loaded from path
+        //command loaded from PATH environment variable
         Path,
+
+        //command loaded from rooted path
+        RootedPath,
 
         //command not found
         None
