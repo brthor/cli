@@ -69,20 +69,21 @@ namespace Microsoft.DotNet.Cli.Utils
 
             if (commandExtension == FileNameSuffixes.DotNet.DynamicLib)
             {
-                return CreatePackageCommandSpecUsingCorehost(commandPath, commandArguments, depsFilePath);
+                return CreatePackageCommandSpecUsingDotnetExec(commandPath, commandArguments, depsFilePath);
             }
             
             return CreateCommandSpec(commandPath, commandArguments);
         }
 
-        private CommandSpec CreatePackageCommandSpecUsingCorehost(
+        private CommandSpec CreatePackageCommandSpecUsingDotnetExec(
             string commandPath, 
             IEnumerable<string> commandArguments, 
             string depsFilePath)
         {
-            var corehost = CoreHost.HostExePath;
+            var corehost = DotnetExec.HostExePath;
 
             var arguments = new List<string>();
+            arguments.Add("exec");
             arguments.Add(commandPath);
 
             if (depsFilePath != null)
