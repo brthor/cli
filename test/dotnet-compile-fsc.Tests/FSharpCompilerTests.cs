@@ -25,7 +25,12 @@ namespace Microsoft.DotNet.Tools.Compiler.Tests
             var testProject = Path.Combine(s_testProjectsRoot, "CompileFailApp", "project.json"); 
             var buildCommand = new BuildCommand(testProject);
 
+            var oldDirectory = Directory.GetCurrentDirectory();
+            Directory.SetCurrentDirectory(Path.GetDirectoryName(testProject));
+
             buildCommand.Execute().Should().Fail();
+
+            Directory.SetCurrentDirectory(oldDirectory);
         }
 
         [Fact]
@@ -34,7 +39,12 @@ namespace Microsoft.DotNet.Tools.Compiler.Tests
             var testProject = Path.Combine(s_testProjectsRoot, "TestAppWithArgs", "project.json"); 
             var buildCommand = new BuildCommand(testProject);
 
+            var oldDirectory = Directory.GetCurrentDirectory();
+            Directory.SetCurrentDirectory(Path.GetDirectoryName(testProject));
+
             buildCommand.Execute().Should().Pass();
+
+            Directory.SetCurrentDirectory(oldDirectory);
         }
 
         [Fact]
@@ -43,10 +53,14 @@ namespace Microsoft.DotNet.Tools.Compiler.Tests
             var testProject = Path.Combine(s_testProjectsRoot, "TestApp", "project.json"); 
             var runCommand = new RunCommand(testProject);
 
-            var result = runCommand.Execute()
+            var oldDirectory = Directory.GetCurrentDirectory();
+            Directory.SetCurrentDirectory(Path.GetDirectoryName(testProject));
+
+            var result = runCommand.Execute();
 
             result.Should().Pass();
-            result.StdOut.Should().Contain("");
+
+            Directory.SetCurrentDirectory(oldDirectory);
         }
     }
 }

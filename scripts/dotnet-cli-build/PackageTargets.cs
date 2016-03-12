@@ -132,7 +132,8 @@ namespace Microsoft.DotNet.Cli.Build
             {
                 if (!packageFile.EndsWith(".symbols.nupkg"))
                 {
-                    File.Copy(packageFile, Dirs.Packages, overwrite: true);
+                    var destinationPath = Path.Combine(Dirs.Packages, Path.GetFileName(packageFile));
+                    File.Copy(packageFile, destinationPath, overwrite: true);
                 }
             }
 

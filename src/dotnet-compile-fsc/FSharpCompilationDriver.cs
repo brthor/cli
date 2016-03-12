@@ -30,7 +30,7 @@ namespace Microsoft.DotNet.Tools.Compiler.Fsc
             File.WriteAllText(assemblyInfo, AssemblyInfoFileGenerator.GenerateFSharp(compileFscCommandApp.AssemblyInfoOptions));
             allArgs.Add($"{assemblyInfo}");
 
-            bool targetNetCore = compileFscCommandApp.CommonOptions.Defines.Contains("DNXCORE50");
+            bool targetNetCore = compileFscCommandApp.CommonOptions.Defines.Contains("NETSTANDARDAPP1_5");
 
             //HACK fsc raise error FS0208 if target exe doesnt have extension .exe
             bool hackFS0208 = targetNetCore && compileFscCommandApp.CommonOptions.EmitEntryPoint == true;
@@ -52,9 +52,9 @@ namespace Microsoft.DotNet.Tools.Compiler.Fsc
                 allArgs.Add("--targetprofile:netcore");
             }
 
-            allArgs.AddRange(compileFscCommandApp.References.Select(r => $"-r:{r}"));
-            allArgs.AddRange(compileFscCommandApp.Resources.Select(resource => $"--resource:{resource}"));
-            allArgs.AddRange(compileFscCommandApp.Sources.Select(s => $"{s}"));
+            allArgs.AddRange(compileFscCommandApp.References.OrEmptyIfNull().Select(r => $"-r:{r}"));
+            allArgs.AddRange(compileFscCommandApp.Resources.OrEmptyIfNull().Select(resource => $"--resource:{resource}"));
+            allArgs.AddRange(compileFscCommandApp.Sources.OrEmptyIfNull().Select(s => $"{s}"));
 
             var rsp = Path.Combine(compileFscCommandApp.TempOutDir, "dotnet-compile-fsc.rsp");
             File.WriteAllLines(rsp, allArgs, Encoding.UTF8);
@@ -182,14 +182,18 @@ namespace Microsoft.DotNet.Tools.Compiler.Fsc
 
         private Command RunFsc(List<string> fscArgs)
         {
-            var corerun = Path.Combine(AppContext.BaseDirectory, Constants.HostExecutableName);
-            var fscExe = Path.Combine(AppContext.BaseDirectory, "fsc.exe");
+            var depsResolver = new DepsCommandResolver();
+
+            var corehost = CoreHost.HostExePath;
+            var fscExe = depsResolver.FscExePath;
 
             List<string> args = new List<string>();
             args.Add(fscExe);
+            args.Add("--depsfile:" + Path.Combine(AppContext.BaseDirectory, "dotnet-compile-fsc.deps"));
+
             args.AddRange(fscArgs);
             
-            return Command.Create(corerun, args.ToArray());
+            return Command.Create(corehost, args.ToArray());
         }
     }
 }

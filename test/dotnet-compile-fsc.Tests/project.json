@@ -25,10 +25,9 @@
 
   "content": [
     "../../TestAssets/TestProjects/FSharpTestProjects/CompileFailApp/**/*",
-    "../../TestAssets/TestProjects/FSharpTestProjects/TestApp/*",
-    "../../TestAssets/TestProjects/FSharpTestProjects/TestAppWithArgs/TestLibrary/*",
-    "../../TestAssets/TestProjects/FSharpTestProjects/TestLibrary/*",
-    "../../TestAssets/TestProjects/FSharpTestProjects/TestAppCompilationContext/**/*",
+    "../../TestAssets/TestProjects/FSharpTestProjects/TestApp/**/*",
+    "../../TestAssets/TestProjects/FSharpTestProjects/TestAppWithArgs/**/*",
+    "../../TestAssets/TestProjects/FSharpTestProjects/TestLibrary/**/*",
     "../../TestAssets/TestProjects/FSharpTestProjects/global.json"
   ],
 

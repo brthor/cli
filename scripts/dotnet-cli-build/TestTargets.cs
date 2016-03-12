@@ -102,7 +102,7 @@ namespace Microsoft.DotNet.Cli.Build
             return c.Success();
         }
 
-        [Target(nameof(CleanTestPackages), nameof(CleanTestPackageSource))]
+        [Target(nameof(CleanProductPackages), nameof(CleanTestPackages), nameof(CleanTestPackageSource))]
         public static BuildTargetResult BuildTestPackages(BuildTargetContext c)
         {
             var dotnet = DotNetCli.Stage2;
@@ -121,6 +121,17 @@ namespace Microsoft.DotNet.Cli.Build
                     .EnsureSuccessful();
             }
             
+            return c.Success();
+        }
+
+        [Target]
+        public static BuildTargetResult CleanProductPackages(BuildTargetContext c)
+        {
+            foreach (var packageName in PackageTargets.ProjectsToPack)
+            {
+                Rmdir(Path.Combine(Dirs.NuGetPackages, packageName));
+            }
+
             return c.Success();
         }
         
