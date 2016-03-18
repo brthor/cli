@@ -89,7 +89,7 @@ export CHANNEL=$RELEASE_SUFFIX
 $DIR/obtain/install.sh --channel $CHANNEL
 
 # Put stage 0 on the PATH (for this shell only)
-PATH="$DOTNET_INSTALL_DIR/cli:$PATH"
+PATH="$DOTNET_INSTALL_DIR/cli:$DOTNET_INSTALL_DIR/bin:$PATH"
 
 # Increases the file descriptors limit for this bash. It prevents an issue we were hitting during restore
 FILE_DESCRIPTOR_LIMIT=$( ulimit -n )

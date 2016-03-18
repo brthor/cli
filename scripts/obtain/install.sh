@@ -139,8 +139,8 @@ install_dotnet()
     local os=$(current_os)
     local installLocation="$INSTALLDIR"
     local dotnet_url="https://dotnetcli.blob.core.windows.net/dotnet/$CHANNEL/Binaries/$VERSION"
+
     local dotnet_filename="dotnet-dev-$os-x64.$fileVersion.tar.gz"
-    
     if [ "$RELINK" = "0" ]; then
         if [ "$FORCE" = "0" ]; then
             local localVersion=$(tail -n 1 "$installLocation/cli/.version" 2>/dev/null)
