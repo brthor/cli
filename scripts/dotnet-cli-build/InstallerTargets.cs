@@ -23,9 +23,10 @@ namespace Microsoft.DotNet.Cli.Build
         }
         
         // [Target(nameof(DebTargets.TestDebInstaller))]
-        // public static BuildTargetResult TestInstaller(BuildTargetContext c)
-        // {
-        //     return c.Success();
-        // }
+        [Target]
+        public static BuildTargetResult TestInstaller(BuildTargetContext c)
+        {
+            return c.Success();
+        }
     }
 }
