@@ -27,15 +27,5 @@ namespace Microsoft.DotNet.Cli.Build
         // {
         //     return c.Success();
         // }
-
-        [Target(
-            nameof(InstallerTargets.GenerateSdkDeb),
-            nameof(InstallerTargets.GenerateSharedFrameworkDeb),
-            nameof(InstallerTargets.GenerateSharedHostDeb))]
-        [BuildPlatforms(BuildPlatform.Ubuntu)]
-        public static BuildTargetResult GenerateDebs(BuildTargetContext c)
-        {
-            return c.Success();
-        }
     }
 }
