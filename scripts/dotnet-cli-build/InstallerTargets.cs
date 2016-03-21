@@ -12,17 +12,21 @@ namespace Microsoft.DotNet.Cli.Build
 {
     public class InstallerTargets
     {
-        [Target(nameof(MsiTargets.GenerateMsis),
-        nameof(MsiTargets.GenerateBundle),
-        nameof(PkgTargets.GeneratePkgs),
-        nameof(DebTargets.GenerateDebs))]
+        [Target(
+            nameof(MsiTargets.GenerateMsis),
+            nameof(MsiTargets.GenerateBundle),
+            nameof(PkgTargets.GeneratePkgs),
+            nameof(DebTargets.GenerateDebs))]
         public static BuildTargetResult GenerateInstaller(BuildTargetContext c)
         {
             return c.Success();
         }
         
-        [Target(nameof(DebTargets.TestDebInstaller))]
-        public static BuildTargetResult TestInstaller(BuildTargetContext c)
+        // [Target(nameof(DebTargets.TestDebInstaller))]
+        // public static BuildTargetResult TestInstaller(BuildTargetContext c)
+        // {
+        //     return c.Success();
+        // }
 
         [Target(
             nameof(InstallerTargets.GenerateSdkDeb),
