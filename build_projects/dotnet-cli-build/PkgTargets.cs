@@ -20,6 +20,7 @@ namespace Microsoft.DotNet.Cli.Build
         public static string CLISdkComponentId { get; set; }
         public static string CLISdkPkgId { get; set; }
         public static string CLISdkNugetVersion { get; set; }
+        public static string HostFxrComponentId { get; set; }
 
         [Target]
         [BuildPlatforms(BuildPlatform.OSX)]
@@ -29,6 +30,7 @@ namespace Microsoft.DotNet.Cli.Build
             Directory.CreateDirectory(PkgsIntermediateDir);
 
             SharedHostComponentId = $"com.microsoft.dotnet.sharedhost.component.osx.x64";
+            HostFxrComponentId = $"com.microsoft.dotnet.hostfxr.component.osx.x64";
 
             string sharedFrameworkNugetName = Monikers.SharedFrameworkName;
             SharedFrameworkNugetVersion = CliDependencyVersions.SharedFrameworkVersion;
@@ -56,6 +58,16 @@ namespace Microsoft.DotNet.Cli.Build
             string resourcePath = Path.Combine(Dirs.RepoRoot, "packaging", "osx", "clisdk", "resources");
             string outFilePath = Path.Combine(Dirs.Packages, c.BuildContext.Get<string>("CombinedFrameworkSDKHostInstallerFile"));
 
+            // Copy SharedFX and host installers in the correct place
+            var sharedFrameworkPkgIntermediatePath = Path.Combine(PkgsIntermediateDir, $"{SharedFxComponentId}.pkg");
+            var sharedHostPkgIntermediatePath = Path.Combine(PkgsIntermediateDir, $"{SharedHostComponentId}.pkg");
+            var hostFxrPkgIntermediatePath = Path.Combine(PkgsIntermediateDir, $"{HostFxrComponentId}.pkg");
+
+
+            File.Copy(c.BuildContext.Get<string>("SharedFrameworkInstallerFile"), sharedFrameworkPkgIntermediatePath, true);
+            File.Copy(c.BuildContext.Get<string>("SharedHostInstallerFile"), sharedHostPkgIntermediatePath, true);
+            File.Copy(c.BuildContext.Get<string>("HostFxrInstallerFile"), hostFxrPkgIntermediatePath, true);
+
             string inputDistTemplatePath = Path.Combine(
                 Dirs.RepoRoot,
                 "packaging",
@@ -67,11 +79,13 @@ namespace Microsoft.DotNet.Cli.Build
             string formattedDistContents =
                 distTemplate.Replace("{SharedFxComponentId}", SharedFxComponentId)
                 .Replace("{SharedHostComponentId}", SharedHostComponentId)
+                .Replace("{HostFxrComponentId}", HostFxrComponentId)
                 .Replace("{CLISdkComponentId}", CLISdkComponentId)
                 .Replace("{CLISdkNugetVersion}", CLISdkNugetVersion)
                 .Replace("{CLISdkBrandName}", Monikers.CLISdkBrandName)
                 .Replace("{SharedFxBrandName}", Monikers.SharedFxBrandName)
-                .Replace("{SharedHostBrandName}", Monikers.SharedHostBrandName);
+                .Replace("{SharedHostBrandName}", Monikers.SharedHostBrandName)
+                .Replace("{HostFxrBrandName}", Monikers.HostFxrBrandName);
             File.WriteAllText(distributionPath, formattedDistContents);
 
             Cmd("productbuild",

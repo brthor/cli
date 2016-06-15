@@ -2,14 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
-using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.DotNet.Cli.Build.Framework;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Blob;
-
-using static Microsoft.DotNet.Cli.Build.Framework.BuildHelpers;
 
 namespace Microsoft.DotNet.Cli.Build
 {
@@ -21,8 +15,6 @@ namespace Microsoft.DotNet.Cli.Build
 
         private static string Channel { get; set; }
 
-        private static string CliVersion { get; set; }
-
         private static string CliNuGetVersion { get; set; }
 
         private static string SharedFrameworkNugetVersion { get; set; }
@@ -33,7 +25,6 @@ namespace Microsoft.DotNet.Cli.Build
             AzurePublisherTool = new AzurePublisher();
             DebRepoPublisherTool = new DebRepoPublisher(Dirs.Packages);
 
-            CliVersion = c.BuildContext.Get<BuildVersion>("BuildVersion").SimpleVersion;
             CliNuGetVersion = c.BuildContext.Get<BuildVersion>("BuildVersion").NuGetVersion;
             SharedFrameworkNugetVersion = CliDependencyVersions.SharedFrameworkVersion;
             Channel = c.BuildContext.Get<string>("Channel");
@@ -44,7 +35,6 @@ namespace Microsoft.DotNet.Cli.Build
         [Target(nameof(PrepareTargets.Init),
         nameof(PublishTargets.InitPublish),
         nameof(PublishTargets.PublishArtifacts),
-        nameof(PublishTargets.TriggerDockerHubBuilds),
         nameof(PublishTargets.FinalizeBuild))]
         [Environment("PUBLISH_TO_AZURE_BLOB", "1", "true")] // This is set by CI systems
         public static BuildTargetResult Publish(BuildTargetContext c)
@@ -114,6 +104,8 @@ namespace Microsoft.DotNet.Cli.Build
                     {
                         AzurePublisherTool.PublishStringToBlob($"{Channel}/dnvm/latest.{version}", cliVersion);
                     }
+
+                    UpdateVersionsRepo(c);
                 }
                 finally
                 {
@@ -187,7 +179,7 @@ namespace Microsoft.DotNet.Cli.Build
         [Target(
             nameof(PublishTargets.PublishInstallerFilesToAzure),
             nameof(PublishTargets.PublishArchivesToAzure),
-            /*nameof(PublishTargets.PublishDebFilesToDebianRepo),*/ //https://github.com/dotnet/cli/issues/2973
+            nameof(PublishTargets.PublishDebFilesToDebianRepo),
             nameof(PublishTargets.PublishCliVersionBadge))]
         public static BuildTargetResult PublishArtifacts(BuildTargetContext c) => c.Success();
 
@@ -204,7 +196,7 @@ namespace Microsoft.DotNet.Cli.Build
 
         [Target(
             nameof(PublishSdkDebToDebianRepo))]
-        [BuildPlatforms(BuildPlatform.Ubuntu, "14.04")]
+        [BuildPlatforms(BuildPlatform.Ubuntu)]
         public static BuildTargetResult PublishDebFilesToDebianRepo(BuildTargetContext c)
         {
             return c.Success();
@@ -218,9 +210,9 @@ namespace Microsoft.DotNet.Cli.Build
             AzurePublisherTool.PublishFile(versionBadgeBlob, versionBadge);
             return c.Success();
         }
-        
+
         [Target]
-        [BuildPlatforms(BuildPlatform.Ubuntu, "14.04")]
+        [BuildPlatforms(BuildPlatform.Ubuntu)]
         public static BuildTargetResult PublishSdkInstallerFileToAzure(BuildTargetContext c)
         {
             var version = CliNuGetVersion;
@@ -278,7 +270,7 @@ namespace Microsoft.DotNet.Cli.Build
         }
 
         [Target]
-        [BuildPlatforms(BuildPlatform.Ubuntu, "14.04")]
+        [BuildPlatforms(BuildPlatform.Ubuntu)]
         public static BuildTargetResult PublishSdkDebToDebianRepo(BuildTargetContext c)
         {
             var version = CliNuGetVersion;
@@ -295,56 +287,15 @@ namespace Microsoft.DotNet.Cli.Build
             return c.Success();
         }
 
-        [Target]
-        [Environment("DOCKER_HUB_REPO")]
-        [Environment("DOCKER_HUB_TRIGGER_TOKEN")]
-        public static BuildTargetResult TriggerDockerHubBuilds(BuildTargetContext c)
-        {
-            string dockerHubRepo = Environment.GetEnvironmentVariable("DOCKER_HUB_REPO");
-            string dockerHubTriggerToken = Environment.GetEnvironmentVariable("DOCKER_HUB_TRIGGER_TOKEN");
-
-            Uri baseDockerHubUri = new Uri("https://registry.hub.docker.com/u/");
-            Uri dockerHubTriggerUri;
-            if (!Uri.TryCreate(baseDockerHubUri, $"{dockerHubRepo}/trigger/{dockerHubTriggerToken}/", out dockerHubTriggerUri))
-            {
-                return c.Failed("Invalid DOCKER_HUB_REPO and/or DOCKER_HUB_TRIGGER_TOKEN");
-            }
-
-            c.Info($"Triggering automated DockerHub builds for {dockerHubRepo}");
-            using (HttpClient client = new HttpClient())
-            {
-                StringContent requestContent = new StringContent("{\"build\": true}", Encoding.UTF8, "application/json");
-                try
-                {
-                    HttpResponseMessage response = client.PostAsync(dockerHubTriggerUri, requestContent).Result;
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        StringBuilder sb = new StringBuilder();
-                        sb.AppendLine($"HTTP request to {dockerHubTriggerUri.ToString()} was unsuccessful.");
-                        sb.AppendLine($"Response status code: {response.StatusCode}. Reason phrase: {response.ReasonPhrase}.");
-                        sb.Append($"Respone content: {response.Content.ReadAsStringAsync().Result}");
-                        return c.Failed(sb.ToString());
-                    }
-                }
-                catch (AggregateException e)
-                {
-                    return c.Failed($"HTTP request to {dockerHubTriggerUri.ToString()} failed. {e.ToString()}");
-                }
-            }
-            return c.Success();
-        }
-
-        [Target(nameof(PrepareTargets.Init))]
-        public static BuildTargetResult UpdateVersionsRepo(BuildTargetContext c)
+        private static void UpdateVersionsRepo(BuildTargetContext c)
         {
             string githubAuthToken = EnvVars.EnsureVariable("GITHUB_PASSWORD");
-            string nupkgFilePath = EnvVars.EnsureVariable("NUPKG_FILE_PATH");
-            string versionsRepoPath = EnvVars.EnsureVariable("VERSIONS_REPO_PATH");
+            string nupkgFilePath = Dirs.Packages;
+            string branchName = c.BuildContext.Get<string>("BranchName");
+            string versionsRepoPath = $"build-info/dotnet/cli/{branchName}/Latest";
 
             VersionRepoUpdater repoUpdater = new VersionRepoUpdater(githubAuthToken);
             repoUpdater.UpdatePublishedVersions(nupkgFilePath, versionsRepoPath).Wait();
-
-            return c.Success();
         }
     }
 }
