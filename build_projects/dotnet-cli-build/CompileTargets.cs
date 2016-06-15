@@ -256,6 +256,17 @@ namespace Microsoft.DotNet.Cli.Build
                 Path.Combine(sdkOutputDirectory, HostArtifactNames.HostPolicyBaseName), 
                 overwrite: true);
 
+            // Hack, remove sharedfx host files
+            File.Delete(
+                Path.Combine(sharedFrameworkNameVersionPath, "corehost{Constants.ExeSuffix}"));
+            File.Delete(
+                Path.Combine(sharedFrameworkNameVersionPath, HostArtifactNames.DotnetHostBaseName));
+            File.Delete(
+                Path.Combine(sharedFrameworkNameVersionPath, HostArtifactNames.DotnetHostFxrBaseName));
+            File.Delete(
+                Path.Combine(sharedFrameworkNameVersionPath, HostArtifactNames.HostPolicyBaseName));
+
+
             CrossgenUtil.CrossgenDirectory(
                 sharedFrameworkNameVersionPath,
                 sdkOutputDirectory);
